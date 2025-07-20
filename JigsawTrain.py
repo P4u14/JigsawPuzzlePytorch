@@ -13,7 +13,7 @@ import tensorflow # needs to call tensorflow before torch, otherwise crush
 
 from Dataset.JigsawImageLoader import DataLoader
 from Utils.TrainingUtils import adjust_learning_rate, compute_accuracy
-from Utils.logger import Logger
+# from Utils.logger import Logger
 
 sys.path.append('Utils')
 # from logger import Logger
@@ -84,9 +84,12 @@ def main():
     
     # Network initialize
     net = Network(args.classes)
-    if args.gpu is not None:
+    if args.gpu >= 0 and torch.cuda.is_available():
         net.cuda()
-    
+        print("Netzwerk wurde auf GPU verschoben.")
+    else:
+        print("Training läuft auf CPU.")
+
     ############## Load from checkpoint if exists, otherwise from model ###############
     if os.path.exists(args.checkpoint):
         files = [f for f in os.listdir(args.checkpoint) if 'pth' in f]
@@ -107,9 +110,11 @@ def main():
     criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(net.parameters(),lr=args.lr,momentum=0.9,weight_decay = 5e-4)
     
-    logger = Logger(args.checkpoint+'/train')
-    logger_test = Logger(args.checkpoint+'/test')
-    
+    # logger = Logger(args.checkpoint+'/train')
+    logger = None
+    # logger_test = Logger(args.checkpoint+'/test')
+    logger_test = None
+
     ############## TESTING ###############
     if args.evaluate:
         test(net,criterion,None,val_loader,0)
@@ -135,7 +140,7 @@ def main():
             
             images = Variable(images)
             labels = Variable(labels)
-            if args.gpu is not None:
+            if args.gpu >= 0 and torch.cuda.is_available():
                 images = images.cuda()
                 labels = labels.cuda()
 
@@ -148,7 +153,7 @@ def main():
                 del net_time[0]
             
             prec1, prec5 = compute_accuracy(outputs.cpu().data, labels.cpu().data, topk=(1, 5))
-            acc = prec1[0]
+            acc = prec1.item()
 
             loss = criterion(outputs, labels)
             loss.backward()
@@ -162,9 +167,9 @@ def main():
                             lr, loss,acc)))
 
             if steps%20==0:
-                logger.scalar_summary('accuracy', acc, steps)
-                logger.scalar_summary('loss', loss, steps)
-                
+                # logger.scalar_summary('accuracy', acc, steps)
+                # logger.scalar_summary('loss', loss, steps)
+
                 original = [im[0] for im in original]
                 imgs = np.zeros([9,75,75,3])
                 for ti, img in enumerate(original):
@@ -172,7 +177,7 @@ def main():
                     imgs[ti] = np.stack([(im-im.min())/(im.max()-im.min()) 
                                          for im in img],axis=2)
                 
-                logger.image_summary('input', imgs, steps)
+                # logger.image_summary('input', imgs, steps)
 
             steps += 1
 
@@ -193,7 +198,7 @@ def test(net,criterion,logger,val_loader,steps):
     net.eval()
     for i, (images, labels, _) in enumerate(val_loader):
         images = Variable(images)
-        if args.gpu is not None:
+        if args.gpu >= 0 and torch.cuda.is_available():
             images = images.cuda()
 
         # Forward + Backward + Optimize
@@ -201,7 +206,7 @@ def test(net,criterion,logger,val_loader,steps):
         outputs = outputs.cpu().data
 
         prec1, prec5 = compute_accuracy(outputs, labels, topk=(1, 5))
-        accuracy.append(prec1[0])
+        accuracy.append(prec1.item())
 
     if logger is not None:
         logger.scalar_summary('accuracy', np.mean(accuracy), steps)
