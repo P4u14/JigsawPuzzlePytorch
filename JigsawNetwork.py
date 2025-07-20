@@ -10,8 +10,8 @@ from torch import cat
 import torch.nn.init as init
 
 import sys
-sys.path.append('Utils')
-from Layers import LRN
+
+from Utils.Layers import LRN
 
 class Network(nn.Module):
 

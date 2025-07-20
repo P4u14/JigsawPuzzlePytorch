@@ -10,8 +10,13 @@ from time import time
 from tqdm import tqdm
 
 import tensorflow # needs to call tensorflow before torch, otherwise crush
+
+from Dataset.JigsawImageLoader import DataLoader
+from Utils.TrainingUtils import adjust_learning_rate, compute_accuracy
+from Utils.logger import Logger
+
 sys.path.append('Utils')
-from logger import Logger
+# from logger import Logger
 
 import torch
 import torch.nn as nn
@@ -20,7 +25,7 @@ from torch.autograd import Variable
 sys.path.append('Dataset')
 from JigsawNetwork import Network
 
-from TrainingUtils import adjust_learning_rate, compute_accuracy
+# from TrainingUtils import adjust_learning_rate, compute_accuracy
 
 
 parser = argparse.ArgumentParser(description='Train JigsawPuzzleSolver on Imagenet')
@@ -39,7 +44,7 @@ parser.add_argument('-e', '--evaluate', dest='evaluate', action='store_true',
 args = parser.parse_args()
 
 #from ImageDataLoader import DataLoader
-from JigsawImageLoader import DataLoader
+# from JigsawImageLoader import DataLoader
 
 
 def main():
