@@ -6,7 +6,7 @@ from torchvision import transforms
 import random
 
 # Bildpfad und Permutationsdatei anpassen
-image_path = "demo_images_small/634913656173116806.Gauss.png"  # Beispielbild
+image_path = "demo_images_small/ILSVRC2012_img_val/634913656173116806.Gauss.png"  # Beispielbild
 perm_file = "permutations_1000.npy"
 
 # Parameter

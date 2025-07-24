@@ -8,6 +8,7 @@ import argparse
 from tqdm import trange
 import numpy as np
 import itertools
+import os
 from scipy.spatial.distance import cdist
 
 
@@ -20,7 +21,8 @@ args = parser.parse_args()
 
 if __name__ == "__main__":
     outname = 'permutations/permutations_hamming_%s_%d'%(args.selection,args.classes)
-    
+    os.makedirs(os.path.dirname(outname), exist_ok=True)
+
     P_hat = np.array(list(itertools.permutations(list(range(9)), 9)))
     n = P_hat.shape[0]
     

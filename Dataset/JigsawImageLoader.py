@@ -80,7 +80,17 @@ class DataLoader(data.Dataset):
         return file_names, labels
 
     def __retrive_permutations(self, classes):
-        all_perm = np.load('permutations_%d.npy' % (classes))
+        # all_perm = np.load('permutations_%d.npy' % (classes))
+        # The path below is adapted to the new permutation file.
+        # It assumes the 'max' selection method was used.
+        path = 'permutations/permutations_hamming_max_%d.npy' % (classes)
+        try:
+            all_perm = np.load(path)
+        except FileNotFoundError:
+            print(f"Permutation file not found at {path}. Falling back to old path.")
+            path = 'permutations_%d.npy' % (classes)
+            all_perm = np.load(path)
+
         # from range [1,9] to [0,8]
         if all_perm.min() == 1:
             all_perm = all_perm - 1
