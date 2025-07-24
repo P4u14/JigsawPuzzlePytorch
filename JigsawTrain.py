@@ -8,6 +8,7 @@ import os, sys, numpy as np
 import argparse
 from time import time
 from tqdm import tqdm
+import datetime
 
 import tensorflow # needs to call tensorflow before torch, otherwise crush
 
@@ -48,7 +49,9 @@ args = parser.parse_args()
 
 
 def main():
-    if args.gpu is not None:
+    total_start_time = time()
+    print('Trainingsstart: %s' % datetime.datetime.fromtimestamp(total_start_time).strftime('%Y-%m-%d %H:%M:%S'))
+    if args.gpu is not None and args.gpu != -1:
         print(('Using GPU %d'%args.gpu))
         os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
         os.environ["CUDA_VISIBLE_DEVICES"]=str(args.gpu)
@@ -56,7 +59,7 @@ def main():
         print('CPU mode')
     
     print('Process number: %d'%(os.getpid()))
-    
+    os.makedirs(args.checkpoint, exist_ok=True) # To create checkpoint folder if not exists, necessary for net.save(filename)
     ## DataLoader initialize ILSVRC2012_train_processed
     trainpath = args.data+'/ILSVRC2012_img_train'
     if os.path.exists(trainpath+'_255x255'):
@@ -174,8 +177,10 @@ def main():
                 imgs = np.zeros([9,75,75,3])
                 for ti, img in enumerate(original):
                     img = img.numpy()
-                    imgs[ti] = np.stack([(im-im.min())/(im.max()-im.min()) 
-                                         for im in img],axis=2)
+                    imgs[ti] = np.stack([
+                        (im - im.min()) / (im.max() - im.min()) if im.max() > im.min() else np.zeros_like(im)
+                        for im in img
+                    ], axis=2)
                 
                 # logger.image_summary('input', imgs, steps)
 
@@ -191,6 +196,11 @@ def main():
         if os.path.exists(args.checkpoint+'/stop.txt'):
             # break without using CTRL+C
             break
+
+    total_end_time = time()
+
+    print('Trainingsende: %s' % datetime.datetime.fromtimestamp(total_end_time).strftime('%Y-%m-%d %H:%M:%S'))
+    print("Trainingsdauer: %.2f Sekunden" % (total_end_time - total_start_time))
 
 def test(net,criterion,logger,val_loader,steps):
     print('Evaluating network.......')
