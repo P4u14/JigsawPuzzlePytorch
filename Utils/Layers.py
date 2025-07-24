@@ -20,9 +20,16 @@ class LRN(nn.Module):
 
     def forward(self, x):
         if self.ACROSS_CHANNELS:
-            div = x.pow(2).unsqueeze(1)
-            div = self.average(div).squeeze(1)
-            div = div.mul(self.alpha).add(1.0).pow(self.beta)
+            # Fallback to CPU if on MPS device, as avg_pool3d is not implemented
+            if x.device.type == 'mps':
+                div = x.cpu().pow(2).unsqueeze(1)
+                div = self.average(div).squeeze(1)
+                div = div.mul(self.alpha).add(1.0).pow(self.beta)
+                div = div.to(x.device)
+            else:
+                div = x.pow(2).unsqueeze(1)
+                div = self.average(div).squeeze(1)
+                div = div.mul(self.alpha).add(1.0).pow(self.beta)
         else:
             div = x.pow(2)
             div = self.average(div)

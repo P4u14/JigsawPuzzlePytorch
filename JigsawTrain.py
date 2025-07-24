@@ -51,13 +51,26 @@ args = parser.parse_args()
 def main():
     total_start_time = time()
     print('Trainingsstart: %s' % datetime.datetime.fromtimestamp(total_start_time).strftime('%Y-%m-%d %H:%M:%S'))
-    if args.gpu is not None and args.gpu != -1:
+    # if args.gpu is not None and args.gpu != -1:
+    #     print(('Using GPU %d'%args.gpu))
+    #     os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
+    #     os.environ["CUDA_VISIBLE_DEVICES"]=str(args.gpu)
+    # else:
+    #     print('CPU mode')
+
+    # Device configuration
+    if args.gpu >= 0 and torch.backends.mps.is_available():
+        device = torch.device("mps")
+        print("MPS ist verfügbar. Training läuft auf MPS.")
+    elif args.gpu >= 0 and torch.cuda.is_available():
+        device = torch.device("cuda:%d" % args.gpu)
         print(('Using GPU %d'%args.gpu))
         os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"
         os.environ["CUDA_VISIBLE_DEVICES"]=str(args.gpu)
     else:
-        print('CPU mode')
-    
+        device = torch.device("cpu")
+        print('Training läuft auf CPU.')
+
     print('Process number: %d'%(os.getpid()))
     os.makedirs(args.checkpoint, exist_ok=True) # To create checkpoint folder if not exists, necessary for net.save(filename)
     ## DataLoader initialize ILSVRC2012_train_processed
@@ -87,11 +100,13 @@ def main():
     
     # Network initialize
     net = Network(args.classes)
-    if args.gpu >= 0 and torch.cuda.is_available():
-        net.cuda()
-        print("Netzwerk wurde auf GPU verschoben.")
-    else:
-        print("Training läuft auf CPU.")
+    # if args.gpu >= 0 and torch.cuda.is_available():
+    #     net.cuda()
+    #     print("Netzwerk wurde auf GPU verschoben.")
+    # else:
+    #     print("Training läuft auf CPU.")
+    net.to(device)
+    print("Netzwerk wurde auf das ausgewählte Gerät verschoben.")
 
     ############## Load from checkpoint if exists, otherwise from model ###############
     if os.path.exists(args.checkpoint):
@@ -120,7 +135,8 @@ def main():
 
     ############## TESTING ###############
     if args.evaluate:
-        test(net,criterion,None,val_loader,0)
+        # test(net,criterion,None,val_loader,0)
+        test(net,criterion,None,val_loader,0,device)
         return
     
     ############## TRAINING ###############
@@ -132,7 +148,8 @@ def main():
     steps = args.iter_start
     for epoch in range(int(args.iter_start/iter_per_epoch),args.epochs):
         if epoch%10==0 and epoch>0:
-            test(net,criterion,logger_test,val_loader,steps)
+            # test(net,criterion,logger_test,val_loader,steps)
+            test(net,criterion,logger_test,val_loader,steps,device)
         lr = adjust_learning_rate(optimizer, epoch, init_lr=args.lr, step=20, decay=0.1)
         
         end = time()
@@ -143,9 +160,11 @@ def main():
             
             images = Variable(images)
             labels = Variable(labels)
-            if args.gpu >= 0 and torch.cuda.is_available():
-                images = images.cuda()
-                labels = labels.cuda()
+            # if args.gpu >= 0 and torch.cuda.is_available():
+            #     images = images.cuda()
+            #     labels = labels.cuda()
+            images = images.to(device)
+            labels = labels.to(device)
 
             # Forward + Backward + Optimize
             optimizer.zero_grad()
@@ -202,14 +221,15 @@ def main():
     print('Trainingsende: %s' % datetime.datetime.fromtimestamp(total_end_time).strftime('%Y-%m-%d %H:%M:%S'))
     print("Trainingsdauer: %.2f Sekunden" % (total_end_time - total_start_time))
 
-def test(net,criterion,logger,val_loader,steps):
+def test(net,criterion,logger,val_loader,steps,device):
     print('Evaluating network.......')
     accuracy = []
     net.eval()
     for i, (images, labels, _) in enumerate(val_loader):
         images = Variable(images)
-        if args.gpu >= 0 and torch.cuda.is_available():
-            images = images.cuda()
+        # if args.gpu >= 0 and torch.cuda.is_available():
+        #     images = images.cuda()
+        images = images.to(device)
 
         # Forward + Backward + Optimize
         outputs = net(images)
