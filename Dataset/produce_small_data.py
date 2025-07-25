@@ -15,10 +15,10 @@ import torchvision.transforms as transforms
 
 from PIL import Image
 
-datapath = os.path.expanduser('~/Documents/DA/Pretext')
+datapath = os.path.expanduser('~/Documents/DA/Downstream')
 
-trainval = 'train'
-# trainval = 'val'
+# trainval = 'train'
+trainval = 'val'
 
 def main():
     #data = DataLoader(datapath+'/ILSVRC2012_img_train', datapath+'/ilsvrc12_train.txt')

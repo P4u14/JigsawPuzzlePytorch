@@ -1,0 +1,27 @@
+# I/O paths
+io:
+  downstream_base_path: "~/Documents/DA/Downstream"
+  train_path: "ILSVRC2012_img_train"
+  val_path: "ILSVRC2012_img_val"
+  images_glob: "*.Gauss.png"
+  masks_glob: "*-mask.Gauss.png"
+
+# Model
+model:
+  encoder_backbone: "resnet34"   # matches JigsawModel backbone
+  in_channels: 256
+  num_classes: 1
+  upsample_factor: 16
+
+# Training
+training:
+  batch_size: 8
+  epochs: 20
+  lr_head: 0.001
+  lr_finetune: 0.0001
+  freeze_epochs: 5
+
+# Checkpoint
+checkpoint:
+  pretrained_ckpt: "./checkpoints/jps_058_001000.pth.tar"
+  output_dir: "./checkpoints/segmentation"
